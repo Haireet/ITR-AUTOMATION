@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Auto ITR</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/chatbot.css">
+</head>
+<body>
+    <!-- Top Navigation -->
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <h1 class="app-logo">Auto ITR</h1>
+        </div>
+        <div class="navbar-user">
+            <span class="user-name" id="userName">Loading...</span>
+            <button class="btn btn-secondary btn-sm" id="logoutBtn">Logout</button>
+        </div>
+    </nav>
+
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li class="sidebar-item active">
+                    <a href="dashboard.html" class="sidebar-link">
+                        <span class="icon">📊</span>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="upload.html" class="sidebar-link">
+                        <span class="icon">📤</span>
+                        <span>Upload Statement</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="merge-statements.html" class="sidebar-link">
+                        <span class="icon">🔗</span>
+                        <span>Merge & Calculate</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="transactions.html" class="sidebar-link">
+                        <span class="icon">💳</span>
+                        <span>Transactions</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="itr-summary.html" class="sidebar-link">
+                        <span class="icon">📋</span>
+                        <span>ITR Summary</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="analytics.html" class="sidebar-link">
+                        <span class="icon">📈</span>
+                        <span>Analytics</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="balance-sheet.html" class="sidebar-link">
+                        <span class="icon">📒</span>
+                        <span>Balance Sheet</span>
+                    </a>
+                </li>
+                <li class="sidebar-item" id="caReviewLink" style="display: none;">
+                    <a href="ca-review.html" class="sidebar-link">
+                        <span class="icon">✓</span>
+                        <span>CA Review</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="profile.html" class="sidebar-link">
+                        <span class="icon">👤</span>
+                        <span>Profile</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="page-header">
+                <h2 class="page-title">Dashboard</h2>
+                <p class="page-subtitle">Overview of your tax filing status</p>
+            </div>
+
+            <!-- Status Cards -->
+            <div class="dashboard-cards">
+                <div class="card stat-card">
+                    <div class="stat-icon">📄</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="statStatements">0</div>
+                        <div class="stat-label">Bank Statements Uploaded</div>
+                    </div>
+                </div>
+
+                <div class="card stat-card">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="statTransactions">0</div>
+                        <div class="stat-label">Transactions Processed</div>
+                    </div>
+                </div>
+
+                <div class="card stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="statReviewed">0</div>
+                        <div class="stat-label">Transactions Reviewed</div>
+                    </div>
+                </div>
+
+                <div class="card stat-card">
+                    <div class="stat-icon">📋</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="statITRStatus">Pending</div>
+                        <div class="stat-label">ITR Filing Status</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Next Steps Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Next Steps</h3>
+                </div>
+                <div class="card-body">
+                    <div id="nextStepsContainer">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Recent Activity</h3>
+                </div>
+                <div class="card-body">
+                    <div id="recentActivityContainer">
+                        <p class="text-muted">No recent activity</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/chatbot.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>

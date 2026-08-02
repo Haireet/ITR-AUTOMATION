@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ITR Summary - Auto ITR</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/chatbot.css">
+    <style>
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .income-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .income-item:last-child { border-bottom: none; }
+        .income-label { color: var(--text-secondary); }
+        .income-value { font-weight: 600; font-size: 1.05rem; }
+        .income-value.positive  { color: #047857; }
+        .income-value.deduction { color: #1d4ed8; }
+        .income-value.tax       { color: #b45309; }
+
+        .tax-box {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #1e3a5f 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 28px;
+            text-align: center;
+        }
+        .tax-box .label  { font-size: .9rem; opacity: .8; margin-bottom: 6px; }
+        .tax-box .amount { font-size: 2.2rem; font-weight: 700; letter-spacing: -1px; }
+        .tax-box .sub    { font-size: .8rem; opacity: .65; margin-top: 4px; }
+
+        .regime-toggle { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+        .regime-btn {
+            padding: 8px 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all .2s;
+        }
+        .regime-btn.active {
+            border-color: var(--primary-color);
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .empty-state { text-align: center; padding: 48px 24px; }
+        .spinner {
+            width: 32px; height: 32px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .tax-comp-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        @media (max-width: 600px) {
+            .tax-comp-grid { grid-template-columns: 1fr; }
+        }
+        @media print {
+            .navbar, .sidebar, .action-bar, #statementSelectorCard { display: none !important; }
+            .main-content { padding: 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <h1 class="app-logo">Auto ITR</h1>
+        </div>
+        <div class="navbar-user">
+            <span class="user-name" id="userName">Loading...</span>
+            <button class="btn btn-secondary btn-sm" id="logoutBtn">Logout</button>
+        </div>
+    </nav>
+
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li class="sidebar-item">
+                    <a href="dashboard.html" class="sidebar-link">
+                        <span class="icon">📊</span><span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="upload.html" class="sidebar-link">
+                        <span class="icon">📤</span><span>Upload Statement</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="merge-statements.html" class="sidebar-link">
+                        <span class="icon">🔗</span><span>Merge & Calculate</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="transactions.html" class="sidebar-link">
+                        <span class="icon">💳</span><span>Transactions</span>
+                    </a>
+                </li>
+                <li class="sidebar-item active">
+                    <a href="itr-summary.html" class="sidebar-link">
+                        <span class="icon">📋</span><span>ITR Summary</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="analytics.html" class="sidebar-link">
+                        <span class="icon">📈</span><span>Analytics</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="balance-sheet.html" class="sidebar-link">
+                        <span class="icon">📒</span><span>Balance Sheet</span>
+                    </a>
+                </li>
+                <li class="sidebar-item" id="caReviewLink" style="display: none;">
+                    <a href="ca-review.html" class="sidebar-link">
+                        <span class="icon">✓</span><span>CA Review</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="profile.html" class="sidebar-link">
+                        <span class="icon">👤</span><span>Profile</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="page-header">
+                <h2 class="page-title">ITR Summary</h2>
+                <p class="page-subtitle">Income &amp; tax computation based on your bank transactions</p>
+            </div>
+
+            <!-- Statement selector -->
+            <div class="card" id="statementSelectorCard">
+                <div class="card-body">
+                    <div id="stmtSelectorContainer"><p class="text-muted">Loading statements…</p></div>
+                </div>
+            </div>
+
+            <!-- Loading -->
+            <div id="loadingState" style="display:none">
+                <div class="card">
+                    <div class="card-body empty-state">
+                        <div class="spinner"></div>
+                        <p class="text-muted">Computing ITR summary…</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty -->
+            <div id="emptyState" style="display:none">
+                <div class="card">
+                    <div class="card-body empty-state">
+                        <div style="font-size:3rem;margin-bottom:12px">📋</div>
+                        <h3>No data yet</h3>
+                        <p class="text-muted" style="margin:8px 0 20px">Select a processed statement above to view your ITR summary.</p>
+                        <a href="upload.html" class="btn btn-primary">Upload &amp; Process a Statement</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Summary -->
+            <div id="summaryContent" style="display:none">
+
+                <!-- Tax Regime -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Tax Regime</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="regime-toggle">
+                            <button class="regime-btn active" id="btnOldRegime" onclick="switchRegime('old')">Old Regime</button>
+                            <button class="regime-btn" id="btnNewRegime" onclick="switchRegime('new')">New Regime (FY 2024-25)</button>
+                        </div>
+                        <p class="text-muted" id="regimeNote" style="font-size:.875rem"></p>
+                    </div>
+                </div>
+
+                <!-- Top metric cards -->
+                <div class="summary-grid" id="topMetrics"></div>
+
+                <!-- Income Breakdown -->
+                <div class="card">
+                    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+                        <h3 class="card-title">Income Breakdown</h3>
+                        <span class="text-muted" style="font-size:.875rem" id="fyLabel"></span>
+                    </div>
+                    <div class="card-body" id="incomeBreakdown"></div>
+                </div>
+
+                <!-- Deductions (old regime) -->
+                <div class="card" id="deductionsCard">
+                    <div class="card-header">
+                        <h3 class="card-title">Deductions (Chapter VI-A)</h3>
+                    </div>
+                    <div class="card-body" id="deductionsBreakdown"></div>
+                </div>
+
+                <!-- Tax Computation -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Tax Computation</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="tax-comp-grid" id="taxCompGrid"></div>
+                    </div>
+                </div>
+
+                <!-- Category Summary Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Category-wise Transaction Summary</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Category</th>
+                                        <th>Transactions</th>
+                                        <th style="text-align:right">Total Amount</th>
+                                        <th>Tax Relevance</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="categoryTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Disclaimer -->
+                <div class="alert alert-warning" style="font-size:.875rem">
+                    ⚠️ <strong>Disclaimer:</strong> This summary is auto-generated from transaction data for reference only.
+                    Consult a qualified CA before filing your ITR. Figures may not reflect TDS, advance tax, or income from other sources.
+                </div>
+
+                <!-- CA Review Status -->
+                <div class="card" id="reviewStatusCard" style="display:none">
+                    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+                        <h3 class="card-title">Filing & Review Status</h3>
+                        <span class="badge" id="reviewStatusBadge"></span>
+                    </div>
+                    <div class="card-body" id="reviewStatusBody"></div>
+                </div>
+
+                <!-- Actions -->
+                <div class="action-bar">
+                    <button class="btn btn-primary" id="btnSaveFiling">💾 Save as ITR Filing</button>
+                    <button class="btn btn-primary" id="btnSubmitReview" style="display:none">📤 Submit for CA Review</button>
+                    <button class="btn btn-primary" id="btnFileITR" style="display:none">📄 File ITR</button>
+                    <button class="btn btn-secondary" id="btnExportPDF" style="display:none">📥 Export PDF</button>
+                    <button class="btn btn-secondary" id="btnExportJSON" style="display:none">📥 Export JSON</button>
+                    <button class="btn btn-secondary" onclick="window.print()">🖨️ Print</button>
+                    <a href="transactions.html" class="btn btn-secondary">✏️ Edit Transactions</a>
+                </div>
+
+            </div><!-- /summaryContent -->
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/chatbot.js"></script>
+    <script>
+    'use strict';
+
+    let currentRegime = 'old';
+    let summaryData   = null;
+
+    document.addEventListener('DOMContentLoaded', async function () {
+        // CA users should not access this page - redirect to CA dashboard
+        if (!Auth.requireRegularUser()) return;
+        await loadStatementSelector();
+
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('statement')) {
+            loadSummary(params.get('statement'));
+        } else {
+            showEmpty();
+        }
+    });
+
+    // ── Statement selector ──────────────────────────────────────────────
+    async function loadStatementSelector() {
+        try {
+            const data      = await API.statements.list();
+            const processed = (data.statements || []).filter(s => s.processing_status === 'completed');
+            const container = document.getElementById('stmtSelectorContainer');
+
+            if (processed.length === 0) {
+                container.innerHTML = `<p class="text-muted">No processed statements yet.
+                    <a href="upload.html">Upload one first →</a></p>`;
+                return;
+            }
+
+            container.innerHTML = `
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                    <label class="form-label" style="margin:0;white-space:nowrap">Statement:</label>
+                    <select id="stmtSelect" class="form-select" style="max-width:440px">
+                        <option value="">— Select a statement —</option>
+                        ${processed.map(s => `
+                            <option value="${s.id}">
+                                ${esc(s.filename)}${s.bank_name ? ' — ' + esc(s.bank_name) : ''}
+                            </option>`).join('')}
+                    </select>
+                </div>`;
+
+            document.getElementById('stmtSelect').addEventListener('change', function () {
+                if (this.value) loadSummary(this.value);
+                else showEmpty();
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    // ── Load & compute ──────────────────────────────────────────────────
+    async function loadSummary(statementId) {
+        showLoading();
+        try {
+            let all = [], skip = 0, fetched;
+            do {
+                const res = await API.statements.getTransactions(statementId, skip, 500);
+                fetched = res.transactions || [];
+                all.push(...fetched);
+                skip += fetched.length;
+            } while (fetched.length === 500);
+
+            if (all.length === 0) { showEmpty(); return; }
+
+            summaryData = computeSummary(all);
+            renderSummary();
+            hide('loadingState');
+            hide('emptyState');
+            show('summaryContent');
+        } catch (e) {
+            showEmpty();
+            console.error(e);
+        }
+    }
+
+    // ── Computation ─────────────────────────────────────────────────────
+    function computeSummary(transactions) {
+        const totals = {};
+        transactions.forEach(t => {
+            if (!totals[t.category]) totals[t.category] = { count: 0, amount: 0 };
+            totals[t.category].count++;
+            totals[t.category].amount += (t.credit > 0 ? t.credit : t.debit);
+        });
+
+        const grossIncome = sumCats(totals, ['salary','interest','dividend',
+            'capital_gains','rental_income','business_income']);
+
+        // Old regime deductions
+        const d80c = Math.min(totals['deduction_80c']?.amount || 0, 150000);
+        const d80d = Math.min(totals['deduction_80d']?.amount || 0, 75000);
+        const d24b = Math.min(totals['home_loan_interest']?.amount || 0, 200000);
+        const d80g = totals['donation']?.amount || 0;
+        const stdOld = Math.min(totals['salary']?.amount || 0, 50000);
+        const totalDedOld = d80c + d80d + d24b + d80g + stdOld;
+
+        // New regime
+        const stdNew = Math.min(totals['salary']?.amount || 0, 75000);
+
+        const taxableOld = Math.max(0, grossIncome - totalDedOld);
+        const taxableNew = Math.max(0, grossIncome - stdNew);
+
+        const fy = deriveFY(transactions);
+
+        return {
+            transactions, totals, grossIncome, fy,
+            old: {
+                stdDeduction: stdOld,
+                d80c, d80d, d24b, d80g,
+                totalDeductions: totalDedOld,
+                taxableIncome: taxableOld,
+                tax: taxOld(taxableOld)
+            },
+            new: {
+                stdDeduction: stdNew,
+                totalDeductions: stdNew,
+                taxableIncome: taxableNew,
+                tax: taxNew(taxableNew)
+            }
+        };
+    }
+
+    function sumCats(totals, cats) {
+        return cats.reduce((s, c) => s + (totals[c]?.amount || 0), 0);
+    }
+
+    function deriveFY(transactions) {
+        const counts = {};
+        transactions.forEach(t => {
+            if (t.financial_year) counts[t.financial_year] = (counts[t.financial_year] || 0) + 1;
+        });
+        const top = Object.entries(counts).sort((a,b) => b[1]-a[1])[0];
+        return top ? top[0] : '2024-25';
+    }
+
+    function taxOld(income) {
+        let tax = 0;
+        if      (income <= 250000)  tax = 0;
+        else if (income <= 500000)  tax = (income - 250000) * 0.05;
+        else if (income <= 1000000) tax = 12500  + (income - 500000)  * 0.20;
+        else                        tax = 112500 + (income - 1000000) * 0.30;
+        const rebate = income <= 500000 ? Math.min(tax, 12500) : 0;
+        const after  = Math.max(0, tax - rebate);
+        const cess   = after * 0.04;
+        return { base: tax, rebate87a: rebate, afterRebate: after, cess, total: after + cess };
+    }
+
+    function taxNew(income) {
+        let tax = 0;
+        if      (income <= 300000)  tax = 0;
+        else if (income <= 700000)  tax = (income - 300000)  * 0.05;
+        else if (income <= 1000000) tax = 20000  + (income - 700000)  * 0.10;
+        else if (income <= 1200000) tax = 50000  + (income - 1000000) * 0.15;
+        else if (income <= 1500000) tax = 80000  + (income - 1200000) * 0.20;
+        else                        tax = 140000 + (income - 1500000) * 0.30;
+        const rebate = income <= 700000 ? Math.min(tax, 25000) : 0;
+        const after  = Math.max(0, tax - rebate);
+        const cess   = after * 0.04;
+        return { base: tax, rebate87a: rebate, afterRebate: after, cess, total: after + cess };
+    }
+
+    // ── Render ───────────────────────────────────────────────────────────
+    function switchRegime(regime) {
+        currentRegime = regime;
+        document.getElementById('btnOldRegime').className = 'regime-btn' + (regime === 'old' ? ' active' : '');
+        document.getElementById('btnNewRegime').className = 'regime-btn' + (regime === 'new' ? ' active' : '');
+        renderSummary();
+    }
+
+    function renderSummary() {
+        const d = summaryData;
+        const r = d[currentRegime];
+
+        document.getElementById('fyLabel').textContent = 'FY ' + d.fy;
+        document.getElementById('regimeNote').textContent = currentRegime === 'old'
+            ? 'Old Regime: Standard deduction ₹50,000 + Chapter VI-A deductions available. Higher slab rates.'
+            : 'New Regime (FY 2024-25): Standard deduction ₹75,000. Lower slab rates; most other deductions not allowed.';
+
+        // Top cards
+        document.getElementById('topMetrics').innerHTML =
+            metricCard('💼', 'Gross Total Income', d.grossIncome, 'positive') +
+            metricCard('➖', currentRegime === 'old' ? 'Total Deductions' : 'Standard Deduction', r.totalDeductions, 'deduction') +
+            metricCard('📊', 'Taxable Income', r.taxableIncome, '') +
+            metricCard('🏛️', 'Total Tax Payable', r.tax.total, 'tax');
+
+        // Income
+        const incCats = [
+            { key:'salary',         label:'💼 Salary Income' },
+            { key:'interest',       label:'🏦 Interest Income' },
+            { key:'dividend',       label:'📈 Dividend' },
+            { key:'capital_gains',  label:'📉 Capital Gains' },
+            { key:'rental_income',  label:'🏠 Rental Income' },
+            { key:'business_income',label:'🏢 Business / Professional' },
+        ].filter(c => (d.totals[c.key]?.amount || 0) > 0);
+
+        document.getElementById('incomeBreakdown').innerHTML = incCats.length
+            ? incCats.map(c => incRow(c.label, d.totals[c.key].amount, 'positive')).join('') +
+              `<div class="income-item" style="margin-top:8px;border-top:2px solid var(--border-color)">
+                  <strong>Gross Total Income</strong>
+                  <span class="income-value positive">₹${fmt(d.grossIncome)}</span>
+               </div>`
+            : '<p class="text-muted">No income transactions detected. <a href="transactions.html">Review your transactions</a>.</p>';
+
+        // Deductions
+        if (currentRegime === 'old') {
+            document.getElementById('deductionsCard').style.display = '';
+            const rows = [
+                { label: 'Standard Deduction (Salaried)', val: r.stdDeduction, note: 'max ₹50,000' },
+                { label: '80C (PPF / LIC / ELSS / EPF)', val: r.d80c,         note: 'max ₹1,50,000' },
+                { label: '80D (Health Insurance)',         val: r.d80d,         note: 'max ₹75,000' },
+                { label: 'Sec 24(b) Home Loan Interest',  val: r.d24b,         note: 'max ₹2,00,000' },
+                { label: '80G Donations',                  val: r.d80g,         note: '' },
+            ].filter(x => x.val > 0);
+
+            document.getElementById('deductionsBreakdown').innerHTML = rows.length
+                ? rows.map(x => `
+                    <div class="income-item">
+                        <span class="income-label">${x.label} <small class="text-muted">${x.note}</small></span>
+                        <span class="income-value deduction">₹${fmt(x.val)}</span>
+                    </div>`).join('') +
+                  `<div class="income-item" style="margin-top:8px;border-top:2px solid var(--border-color)">
+                      <strong>Total Deductions</strong>
+                      <span class="income-value deduction">₹${fmt(r.totalDeductions)}</span>
+                   </div>`
+                : '<p class="text-muted">No deduction transactions detected.</p>';
+        } else {
+            document.getElementById('deductionsCard').style.display = 'none';
+        }
+
+        // Tax comp
+        const savings = Math.abs(d.old.tax.total - d.new.tax.total);
+        const cheaperRegime = d.old.tax.total <= d.new.tax.total ? 'Old' : 'New';
+        document.getElementById('taxCompGrid').innerHTML = `
+            <div>
+                ${incRow('Gross Total Income',       d.grossIncome,       'positive')}
+                ${incRow('Less: Total Deductions',   r.totalDeductions,   'deduction')}
+                ${incRow('Taxable Income',           r.taxableIncome,     '')}
+                <div style="height:12px"></div>
+                ${incRow('Income Tax',               r.tax.base,          'tax')}
+                ${r.tax.rebate87a > 0 ? incRow('Less: Rebate u/s 87A', r.tax.rebate87a, 'deduction') : ''}
+                ${incRow('Health & Education Cess (4%)', r.tax.cess,    'tax')}
+                <div class="income-item" style="margin-top:8px;border-top:2px solid var(--border-color)">
+                    <strong>Net Tax Payable</strong>
+                    <span class="income-value tax" style="font-size:1.15rem">₹${fmt(r.tax.total)}</span>
+                </div>
+            </div>
+            <div>
+                <div class="tax-box">
+                    <div class="label">TOTAL TAX PAYABLE</div>
+                    <div class="amount">₹${fmt(r.tax.total)}</div>
+                    <div class="sub">${currentRegime === 'old' ? 'Old Regime' : 'New Regime'} · FY ${d.fy}</div>
+                </div>
+                ${savings > 0 ? `
+                <div style="margin-top:16px;padding:14px;background:var(--bg-color);border-radius:8px;font-size:.875rem;line-height:1.7">
+                    <strong>Regime Comparison</strong><br>
+                    Old Regime: ₹${fmt(d.old.tax.total)}<br>
+                    New Regime: ₹${fmt(d.new.tax.total)}<br>
+                    <span style="color:var(--accent-success);font-weight:600">
+                        ✓ ${cheaperRegime} Regime saves ₹${fmt(savings)}
+                    </span>
+                </div>` : ''}
+            </div>`;
+
+        // Category table
+        const catMeta = {
+            salary:             { label:'Salary Income',          rel:'Taxable — Head: Salaries' },
+            interest:           { label:'Interest Income',         rel:'Taxable — Head: Other Sources' },
+            dividend:           { label:'Dividend',                rel:'Taxable — Head: Other Sources' },
+            capital_gains:      { label:'Capital Gains',           rel:'Taxable — Head: Capital Gains' },
+            rental_income:      { label:'Rental Income',           rel:'Taxable — Head: House Property' },
+            business_income:    { label:'Business Income',         rel:'Taxable — Head: PGBP' },
+            deduction_80c:      { label:'Deduction 80C',           rel:'⬇ Old Regime only (max ₹1.5L)' },
+            deduction_80d:      { label:'Health Insurance (80D)',  rel:'⬇ Old Regime only (max ₹75K)' },
+            home_loan_interest: { label:'Home Loan Interest',      rel:'⬇ Old Regime only (max ₹2L)' },
+            donation:           { label:'Donation (80G)',          rel:'⬇ Old Regime only' },
+            expense:            { label:'Expense',                 rel:'Not tax-relevant' },
+            transfer:           { label:'Fund Transfer',           rel:'Not tax-relevant' },
+            uncategorized:      { label:'Uncategorized',           rel:'⚠️ Please review these' },
+        };
+
+        document.getElementById('categoryTableBody').innerHTML =
+            Object.entries(d.totals)
+                .sort((a,b) => b[1].amount - a[1].amount)
+                .map(([cat, info]) => {
+                    const m = catMeta[cat] || { label: cat, rel: '' };
+                    return `<tr>
+                        <td>${m.label}</td>
+                        <td>${info.count}</td>
+                        <td style="text-align:right">₹${fmt(info.amount)}</td>
+                        <td><small class="text-muted">${m.rel}</small></td>
+                    </tr>`;
+                }).join('');
+    }
+
+    // ── Tiny helpers ─────────────────────────────────────────────────────
+    function metricCard(icon, label, value, cls) {
+        return `<div class="card" style="margin-bottom:0">
+            <div class="card-body" style="padding:20px">
+                <div style="font-size:1.8rem;margin-bottom:6px">${icon}</div>
+                <div class="income-label" style="font-size:.8rem">${label}</div>
+                <div class="income-value ${cls}" style="font-size:1.35rem;margin-top:4px">₹${fmt(value)}</div>
+            </div>
+        </div>`;
+    }
+
+    function incRow(label, value, cls) {
+        return `<div class="income-item">
+            <span class="income-label">${label}</span>
+            <span class="income-value ${cls}">₹${fmt(value)}</span>
+        </div>`;
+    }
+
+    function fmt(n) {
+        return Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function esc(str) {
+        return String(str || '')
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function showLoading() { hide('summaryContent'); hide('emptyState'); show('loadingState'); }
+    function showEmpty()   { hide('summaryContent'); hide('loadingState'); show('emptyState'); }
+    function show(id) { document.getElementById(id).style.display = ''; }
+    function hide(id) { document.getElementById(id).style.display = 'none'; }
+
+    // ── ITR Filing, CA Review & Export ───────────────────────────────────
+    let currentFilingId = null;
+
+    // Save as ITR filing
+    document.getElementById('btnSaveFiling').addEventListener('click', async () => {
+        if (!summaryData) return alert('No summary data to save');
+        const r = summaryData[currentRegime];
+        const fy = summaryData.fy;
+        const ay = fy.replace(/(\d{4})-(\d{2})/, (_, y1, y2) => {
+            const start = parseInt(y1) + 1;
+            const end = parseInt(y2) + 1;
+            return `${start}-${end < 10 ? '0' + end : end}`;
+        });
+
+        try {
+            // Check if filing exists
+            const filings = await API.itr.list();
+            let filing = filings.find(f => f.assessment_year === ay);
+
+            if (!filing) {
+                filing = await API.itr.create({
+                    assessment_year: ay,
+                    form_type: 'ITR-1',
+                    data: JSON.stringify({ regime: currentRegime, summary: summaryData })
+                });
+            } else {
+                filing = await API.itr.update(filing.id, {
+                    data: JSON.stringify({ regime: currentRegime, summary: summaryData })
+                });
+            }
+
+            // Save tax computation
+            await API.itr.saveComputation({
+                itr_filing_id: filing.id,
+                gross_total_income: summaryData.grossIncome,
+                total_deductions: r.totalDeductions,
+                taxable_income: r.taxableIncome,
+                tax_on_total_income: r.tax.base,
+                rebate_87a: r.tax.rebate87a,
+                health_education_cess: r.tax.cess,
+                total_tax_liability: r.tax.total,
+                tax_regime: currentRegime
+            });
+
+            currentFilingId = filing.id;
+            alert('ITR filing saved successfully!');
+            updateReviewStatus(filing);
+        } catch (e) {
+            alert('Error saving filing: ' + e.message);
+        }
+    });
+
+    // Submit for CA review
+    document.getElementById('btnSubmitReview').addEventListener('click', async () => {
+        if (!currentFilingId) return alert('Please save the filing first');
+        if (!confirm('Submit this ITR for CA review? You won\'t be able to edit it until the CA responds.')) return;
+        try {
+            const filing = await API.itr.submitForReview(currentFilingId);
+            alert('Filing submitted for CA review!');
+            updateReviewStatus(filing);
+        } catch (e) { alert('Error: ' + e.message); }
+    });
+
+    // File ITR (after CA approval)
+    document.getElementById('btnFileITR').addEventListener('click', async () => {
+        if (!currentFilingId) return;
+        if (!confirm('File this ITR? This action cannot be undone.')) return;
+        try {
+            const filing = await API.itr.fileITR(currentFilingId);
+            alert('ITR filed successfully!');
+            updateReviewStatus(filing);
+        } catch (e) { alert('Error: ' + e.message); }
+    });
+
+    // Export PDF
+    document.getElementById('btnExportPDF').addEventListener('click', async () => {
+        if (!currentFilingId) return alert('Please save the filing first');
+        try {
+            await API.export.downloadWithAuth(API.export.itrPDF(currentFilingId));
+        } catch (e) { alert('Export failed: ' + e.message); }
+    });
+
+    // Export JSON
+    document.getElementById('btnExportJSON').addEventListener('click', async () => {
+        if (!currentFilingId) return alert('Please save the filing first');
+        try {
+            const data = await API.export.itrJSON(currentFilingId);
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `ITR_${currentFilingId}.json`;
+            a.click();
+            URL.revokeObjectURL(a.href);
+        } catch (e) { alert('Export failed: ' + e.message); }
+    });
+
+    function updateReviewStatus(filing) {
+        currentFilingId = filing.id;
+        const card = document.getElementById('reviewStatusCard');
+        const badge = document.getElementById('reviewStatusBadge');
+        const body = document.getElementById('reviewStatusBody');
+
+        card.style.display = '';
+
+        const statusMap = {
+            'pending_review': { label: 'PENDING REVIEW', class: 'badge-warning' },
+            'pending_ca_approval': { label: 'PENDING CA APPROVAL', class: 'badge-warning' },
+            'under_review': { label: 'UNDER CA REVIEW', class: 'badge-warning' },
+            'changes_requested': { label: 'CHANGES REQUESTED', class: 'badge-error' },
+            'approved': { label: 'CA APPROVED', class: 'badge-success' },
+        };
+        const st = statusMap[filing.review_status] || { label: filing.review_status, class: 'badge-muted' };
+        badge.textContent = st.label;
+        badge.className = 'badge ' + st.class;
+
+        let html = `<p><strong>Status:</strong> ${filing.status} | <strong>Review:</strong> ${filing.review_status.replace(/_/g, ' ')}</p>`;
+        if (filing.ca_comments) {
+            html += `<div style="margin-top:8px;padding:12px;background:var(--bg-color);border-radius:6px;border-left:3px solid var(--primary-color)">
+                <strong>CA Comments:</strong><br><span class="text-secondary" style="white-space:pre-wrap">${esc(filing.ca_comments)}</span>
+            </div>`;
+        }
+        body.innerHTML = html;
+
+        // Show/hide action buttons
+        const canSubmit = filing.review_status === 'pending_review' || filing.review_status === 'pending_ca_approval' || filing.review_status === 'changes_requested';
+        const canFile = filing.review_status === 'approved' && filing.status !== 'filed';
+        document.getElementById('btnSubmitReview').style.display = canSubmit ? '' : 'none';
+        document.getElementById('btnFileITR').style.display = canFile ? '' : 'none';
+        document.getElementById('btnExportPDF').style.display = '';
+        document.getElementById('btnExportJSON').style.display = '';
+    }
+
+    // Auto-load existing filing if available
+    async function checkExistingFiling() {
+        try {
+            const filings = await API.itr.list();
+            if (filings && filings.length > 0) {
+                const latest = filings[0];
+                currentFilingId = latest.id;
+                updateReviewStatus(latest);
+            }
+        } catch (e) { /* ignore */ }
+    }
+    checkExistingFiling();
+    </script>
+</body>
+</html>

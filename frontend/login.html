@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Auto ITR</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="login-page">
+    <div class="login-container">
+        <div class="login-box">
+            <!-- Logo and Header -->
+            <div class="login-header">
+                <h1 class="app-logo">Auto ITR</h1>
+                <p class="tagline">Automated Income Tax Return Filing</p>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        class="form-input"
+                        placeholder="you@example.com"
+                        required
+                        autocomplete="email"
+                    >
+                    <span class="error-message" id="emailError"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        class="form-input"
+                        placeholder="Enter your password"
+                        required
+                        autocomplete="current-password"
+                    >
+                    <span class="error-message" id="passwordError"></span>
+                </div>
+
+                <!-- Global Error Message -->
+                <div id="globalError" class="alert alert-error" style="display: none;"></div>
+
+                <!-- Submit Button -->
+                <button type="submit" id="loginBtn" class="btn btn-primary btn-block">
+                    <span id="loginBtnText">Sign In</span>
+                    <span id="loginBtnLoader" class="btn-loader" style="display: none;"></span>
+                </button>
+            </form>
+
+            <!-- Footer Links -->
+            <div class="login-footer">
+                <p class="text-muted">
+                    Don't have an account? 
+                    <a href="register.html" class="link">Register here</a>
+                </p>
+                <p class="text-muted">
+                    Are you a CA? 
+                    <a href="ca-register.html" class="link">Register as Chartered Accountant</a>
+                </p>
+                <p class="text-muted small">
+                    Secured and compliant with Income Tax Department guidelines
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/login.js"></script>
+</body>
+</html>

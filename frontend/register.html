@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Auto ITR</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="login-page">
+    <div class="login-container">
+        <div class="login-box register-box">
+            <!-- Logo and Header -->
+            <div class="login-header">
+                <h1 class="app-logo">Auto ITR</h1>
+                <p class="tagline">Create your account to get started</p>
+            </div>
+
+            <!-- Registration Form -->
+            <form id="registerForm" class="login-form">
+                <div class="form-group">
+                    <label for="fullName" class="form-label">Full Name</label>
+                    <input 
+                        type="text" 
+                        id="fullName" 
+                        name="fullName" 
+                        class="form-input"
+                        placeholder="Your full name"
+                        required
+                        autocomplete="name"
+                    >
+                    <span class="error-message" id="fullNameError"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        class="form-input"
+                        placeholder="you@example.com"
+                        required
+                        autocomplete="email"
+                    >
+                    <span class="error-message" id="emailError"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone" class="form-label">Mobile Number (Optional)</label>
+                    <input 
+                        type="tel" 
+                        id="phone" 
+                        name="phone" 
+                        class="form-input"
+                        placeholder="10-digit mobile number"
+                        maxlength="10"
+                        autocomplete="tel"
+                    >
+                    <span class="error-message" id="phoneError"></span>
+                    <span class="helper-text">Format: 9876543210</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="pan" class="form-label">PAN Number (Optional)</label>
+                    <input 
+                        type="text" 
+                        id="pan" 
+                        name="pan" 
+                        class="form-input"
+                        placeholder="ABCDE1234F"
+                        maxlength="10"
+                        style="text-transform: uppercase"
+                    >
+                    <span class="error-message" id="panError"></span>
+                    <span class="helper-text">Format: ABCDE1234F</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        class="form-input"
+                        placeholder="Create a strong password"
+                        required
+                        autocomplete="new-password"
+                    >
+                    <span class="error-message" id="passwordError"></span>
+                    <span class="helper-text">Minimum 8 characters with uppercase, lowercase, and number</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword" class="form-label">Confirm Password</label>
+                    <input 
+                        type="password" 
+                        id="confirmPassword" 
+                        name="confirmPassword" 
+                        class="form-input"
+                        placeholder="Re-enter your password"
+                        required
+                        autocomplete="new-password"
+                    >
+                    <span class="error-message" id="confirmPasswordError"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="agreeTerms" required>
+                        <span>I agree to the <a href="#" class="link">Terms of Service</a> and <a href="#" class="link">Privacy Policy</a></span>
+                    </label>
+                    <span class="error-message" id="agreeTermsError"></span>
+                </div>
+
+                <!-- Global Error Message -->
+                <div id="globalError" class="alert alert-error" style="display: none;"></div>
+
+                <!-- Global Success Message -->
+                <div id="globalSuccess" class="alert alert-success" style="display: none;"></div>
+
+                <!-- Submit Button -->
+                <button type="submit" id="registerBtn" class="btn btn-primary btn-block">
+                    <span id="registerBtnText">Create Account</span>
+                    <span id="registerBtnLoader" class="btn-loader" style="display: none;"></span>
+                </button>
+            </form>
+
+            <!-- Footer Links -->
+            <div class="login-footer">
+                <p class="text-muted">
+                    Already have an account? 
+                    <a href="login.html" class="link">Sign in here</a>
+                </p>
+                <p class="text-muted">
+                    Are you a CA? 
+                    <a href="ca-register.html" class="link">Register as Chartered Accountant</a>
+                </p>
+                <p class="text-muted small">
+                    By registering, you agree to our terms and privacy policy
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/register.js"></script>
+</body>
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Bank Statement - Auto ITR</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/chatbot.css">
+</head>
+<body>
+    <!-- Top Navigation -->
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <h1 class="app-logo">Auto ITR</h1>
+        </div>
+        <div class="navbar-user">
+            <span class="user-name" id="userName">Loading...</span>
+            <button class="btn btn-secondary btn-sm" id="logoutBtn">Logout</button>
+        </div>
+    </nav>
+
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li class="sidebar-item">
+                    <a href="dashboard.html" class="sidebar-link">
+                        <span class="icon">📊</span>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="sidebar-item active">
+                    <a href="upload.html" class="sidebar-link">
+                        <span class="icon">📤</span>
+                        <span>Upload Statement</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="merge-statements.html" class="sidebar-link">
+                        <span class="icon">🔗</span>
+                        <span>Merge & Calculate</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="transactions.html" class="sidebar-link">
+                        <span class="icon">💳</span>
+                        <span>Transactions</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="itr-summary.html" class="sidebar-link">
+                        <span class="icon">📋</span>
+                        <span>ITR Summary</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="analytics.html" class="sidebar-link">
+                        <span class="icon">📈</span>
+                        <span>Analytics</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="balance-sheet.html" class="sidebar-link">
+                        <span class="icon">📒</span>
+                        <span>Balance Sheet</span>
+                    </a>
+                </li>
+                <li class="sidebar-item" id="caReviewLink" style="display: none;">
+                    <a href="ca-review.html" class="sidebar-link">
+                        <span class="icon">✓</span>
+                        <span>CA Review</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="profile.html" class="sidebar-link">
+                        <span class="icon">👤</span>
+                        <span>Profile</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="page-header">
+                <h2 class="page-title">Upload Bank Statement</h2>
+                <p class="page-subtitle">Upload your bank statement to automatically extract transactions</p>
+            </div>
+
+            <!-- Instructions Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Instructions</h3>
+                </div>
+                <div class="card-body">
+                    <ul class="instruction-list">
+                        <li>Accepted formats: CSV, Excel (.xls, .xlsx), PDF</li>
+                        <li>Maximum file size: 10 MB</li>
+                        <li>Ensure the statement covers the complete financial year</li>
+                        <li>The statement should include: Date, Description, Debit, Credit, Balance</li>
+                    </ul>
+                    <div class="alert alert-warning">
+                        <strong>⚠️ Important:</strong> Do not upload the same statement multiple times. Duplicate transactions will be processed.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload Area -->
+            <div class="card">
+                <div class="card-body">
+                    <div id="uploadArea" class="upload-area">
+                        <div class="upload-icon">📁</div>
+                        <h3>Drag and drop your bank statement here</h3>
+                        <p class="text-muted">or click to browse files</p>
+                        <input type="file" id="fileInput" accept=".csv,.xls,.xlsx,.pdf" style="display: none;">
+                        <button class="btn btn-primary" id="browseBtn">Browse Files</button>
+                    </div>
+
+                    <!-- PDF Password Step (shown after user selects a PDF) -->
+                    <div id="pdfPasswordSection" style="display: none;">
+                        <div class="alert alert-warning" style="margin-bottom: 12px;">
+                            <strong>🔒 PDF Selected:</strong> <span id="pdfFileName"></span>
+                            <p style="margin-top:6px;">If this PDF is password protected, enter the password below. Leave blank if not protected.</p>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <input type="password" id="pdfPassword" class="form-control" placeholder="PDF password (optional)" style="flex: 1; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px;">
+                            <button class="btn btn-primary" id="uploadPdfBtn">📤 Upload & Process</button>
+                            <button class="btn btn-secondary" id="cancelPdfBtn">Cancel</button>
+                        </div>
+                    </div>
+
+                    <!-- Upload Progress -->
+                    <div id="uploadProgress" class="upload-progress" style="display: none;">
+                        <div class="progress-info">
+                            <span id="fileName"></span>
+                            <span id="fileSize"></span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="progressBar"></div>
+                        </div>
+                        <p id="progressText" class="text-muted">Uploading...</p>
+                    </div>
+
+                    <!-- Success Message -->
+                    <div id="uploadSuccess" class="alert alert-success" style="display: none;">
+                        <strong>✓ Success!</strong> Your bank statement has been uploaded successfully.
+                        <button class="btn btn-link" onclick="window.location.href='transactions.html'">
+                            View Transactions →
+                        </button>
+                    </div>
+
+                    <!-- Error Message -->
+                    <div id="uploadError" class="alert alert-error" style="display: none;"></div>
+                </div>
+            </div>
+
+            <!-- Uploaded Statements List -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Uploaded Statements</h3>
+                </div>
+                <div class="card-body">
+                    <div id="statementsList">
+                        <p class="text-muted">No statements uploaded yet</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/chatbot.js"></script>
+    <script src="js/upload.js"></script>
+</body>
+</html>

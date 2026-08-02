@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merge Statements & Calculate ITR - Auto ITR</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/chatbot.css">
+    <style>
+        .step-indicator{display:flex;gap:8px;margin-bottom:24px}
+        .step{flex:1;text-align:center;padding:10px;border-radius:8px;background:#e9ecef;font-weight:600;font-size:.85rem;transition:.3s}
+        .step.active{background:var(--primary-color,#2563eb);color:#fff}
+        .step.done{background:#22c55e;color:#fff}
+
+        .stmt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin:16px 0}
+        .stmt-card{border:2px solid #e5e7eb;border-radius:12px;padding:16px;cursor:pointer;transition:.2s}
+        .stmt-card:hover{border-color:var(--primary-color,#2563eb)}
+        .stmt-card.selected{border-color:#22c55e;background:#f0fdf4}
+        .stmt-card .name{font-weight:600;font-size:1rem;margin-bottom:4px}
+        .stmt-card .meta{font-size:.8rem;color:#6b7280}
+
+        .fy-select{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+        .fy-select select{padding:8px 16px;border-radius:8px;border:1px solid #d1d5db;font-size:.95rem}
+
+        .summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin:16px 0}
+        .summary-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;text-align:center}
+        .summary-card .label{font-size:.75rem;color:#64748b;text-transform:uppercase;letter-spacing:.5px}
+        .summary-card .value{font-size:1.5rem;font-weight:700;margin-top:4px}
+
+        .cat-table{width:100%;border-collapse:collapse;margin:16px 0;font-size:.9rem}
+        .cat-table th,.cat-table td{padding:10px 14px;text-align:left;border-bottom:1px solid #e5e7eb}
+        .cat-table th{background:#f1f5f9;font-weight:600;font-size:.8rem;text-transform:uppercase;color:#475569}
+        .cat-table tr:hover{background:#f8fafc}
+
+        .tax-comparison{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:20px 0}
+        .tax-regime-card{border:2px solid #e5e7eb;border-radius:12px;padding:20px}
+        .tax-regime-card.recommended{border-color:#22c55e;background:#f0fdf4}
+        .tax-regime-card h3{margin:0 0 12px;font-size:1.1rem}
+        .tax-regime-card .badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.75rem;font-weight:600;background:#22c55e;color:#fff;margin-left:8px}
+
+        .slab-table{width:100%;border-collapse:collapse;font-size:.85rem;margin:12px 0}
+        .slab-table th,.slab-table td{padding:8px;border-bottom:1px solid #e5e7eb;text-align:right}
+        .slab-table th{text-align:left;background:#f8fafc;font-size:.75rem;text-transform:uppercase}
+        .slab-table td:first-child,.slab-table th:first-child{text-align:left}
+
+        .income-breakdown{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+        .income-item{display:flex;justify-content:space-between;padding:8px 12px;background:#f8fafc;border-radius:8px}
+        .income-item .lbl{color:#475569;font-size:.9rem}
+        .income-item .amt{font-weight:600}
+
+        .total-row{font-size:1.3rem;font-weight:700;display:flex;justify-content:space-between;padding:12px 16px;background:var(--primary-color,#2563eb);color:#fff;border-radius:10px;margin-top:12px}
+
+        .action-bar{display:flex;gap:12px;margin-top:24px;padding-top:16px;border-top:1px solid #e5e7eb}
+        .select-actions{display:flex;gap:8px;margin:12px 0}
+
+        @media(max-width:768px){
+            .tax-comparison{grid-template-columns:1fr}
+            .income-breakdown{grid-template-columns:1fr}
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand"><h1 class="app-logo">Auto ITR</h1></div>
+        <div class="navbar-user">
+            <span class="user-name" id="userName">Loading...</span>
+            <button class="btn btn-secondary btn-sm" id="logoutBtn">Logout</button>
+        </div>
+    </nav>
+
+    <div class="app-layout">
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li class="sidebar-item"><a href="dashboard.html" class="sidebar-link"><span class="icon">📊</span><span>Dashboard</span></a></li>
+                <li class="sidebar-item"><a href="upload.html" class="sidebar-link"><span class="icon">📤</span><span>Upload Statement</span></a></li>
+                <li class="sidebar-item active"><a href="merge-statements.html" class="sidebar-link"><span class="icon">🔗</span><span>Merge & Calculate</span></a></li>
+                <li class="sidebar-item"><a href="transactions.html" class="sidebar-link"><span class="icon">💳</span><span>Transactions</span></a></li>
+                <li class="sidebar-item"><a href="itr-summary.html" class="sidebar-link"><span class="icon">📋</span><span>ITR Summary</span></a></li>
+                <li class="sidebar-item"><a href="analytics.html" class="sidebar-link"><span class="icon">📈</span><span>Analytics</span></a></li>
+                <li class="sidebar-item"><a href="balance-sheet.html" class="sidebar-link"><span class="icon">📒</span><span>Balance Sheet</span></a></li>
+                <li class="sidebar-item" id="caReviewLink" style="display: none;"><a href="ca-review.html" class="sidebar-link"><span class="icon">✓</span><span>CA Review</span></a></li>
+                <li class="sidebar-item"><a href="profile.html" class="sidebar-link"><span class="icon">👤</span><span>Profile</span></a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <h2 class="page-title">Merge Statements & Calculate ITR</h2>
+                <p class="page-subtitle">Combine monthly bank statements, auto-calculate income tax, and create ITR filing</p>
+            </div>
+
+            <!-- Step Indicator -->
+            <div class="step-indicator">
+                <div class="step active" id="step1Indicator">① Select Statements</div>
+                <div class="step" id="step2Indicator">② Review Merged Data</div>
+                <div class="step" id="step3Indicator">③ Tax Calculation</div>
+            </div>
+
+            <!-- ═══ STEP 1: Select Statements ═══ -->
+            <div id="step1" class="card">
+                <h3>📄 Select Bank Statements to Merge</h3>
+                <p style="color:#6b7280;font-size:.9rem">Select the monthly statements you want to consolidate for the financial year. Overlapping transactions are automatically deduplicated.</p>
+
+                <div class="fy-select">
+                    <label><strong>Financial Year:</strong></label>
+                    <select id="fySelect">
+                        <option value="2024-25" selected>2024-25</option>
+                        <option value="2023-24">2023-24</option>
+                        <option value="2025-26">2025-26</option>
+                    </select>
+                </div>
+
+                <div class="select-actions">
+                    <button class="btn btn-secondary btn-sm" id="selectAllBtn">Select All</button>
+                    <button class="btn btn-secondary btn-sm" id="deselectAllBtn">Deselect All</button>
+                    <span id="selectedCount" style="color:#6b7280;font-size:.85rem;line-height:2.2">0 selected</span>
+                </div>
+
+                <div class="stmt-grid" id="stmtGrid">
+                    <div class="empty-state"><div class="icon">📄</div><p>Loading statements...</p></div>
+                </div>
+
+                <div class="action-bar">
+                    <button class="btn btn-primary" id="mergeBtn" disabled>🔗 Merge Selected Statements</button>
+                </div>
+            </div>
+
+            <!-- ═══ STEP 2: Merged Summary ═══ -->
+            <div id="step2" class="card" style="display:none">
+                <h3>📊 Merged Statement Summary</h3>
+
+                <div class="summary-grid" id="summaryCards"></div>
+
+                <h4 style="margin-top:20px">Category Breakdown</h4>
+                <table class="cat-table">
+                    <thead><tr><th>Category</th><th>Transactions</th><th>Total Credit (₹)</th><th>Total Debit (₹)</th><th>Net (₹)</th></tr></thead>
+                    <tbody id="catBreakdown"></tbody>
+                </table>
+
+                <div class="action-bar">
+                    <button class="btn btn-secondary" id="backToStep1">← Back</button>
+                    <button class="btn btn-secondary" id="downloadMergedPDF">📥 Download PDF</button>
+                    <button class="btn btn-secondary" id="downloadMergedJSON">📥 Download JSON</button>
+                    <button class="btn btn-primary" id="calcTaxBtn">📐 Calculate Income Tax</button>
+                </div>
+            </div>
+
+            <!-- ═══ STEP 3: Tax Calculation ═══ -->
+            <div id="step3" class="card" style="display:none">
+                <h3>🧮 Income Tax Calculation</h3>
+
+                <h4>Income Breakdown</h4>
+                <div class="income-breakdown" id="incomeBreakdown"></div>
+
+                <h4 style="margin-top:24px">Tax Comparison — Old vs New Regime</h4>
+                <div class="tax-comparison" id="taxComparison"></div>
+
+                <div id="savingsBox" style="margin-top:16px;padding:16px;border-radius:10px;background:#fef3c7;text-align:center;font-size:1rem;display:none"></div>
+
+                <div class="action-bar">
+                    <button class="btn btn-secondary" id="backToStep2">← Back</button>
+                    <select id="regimeForFiling" style="padding:8px 12px;border-radius:8px;border:1px solid #d1d5db">
+                        <option value="new">New Regime</option>
+                        <option value="old">Old Regime</option>
+                    </select>
+                    <button class="btn btn-primary" id="createFilingBtn">📄 Create ITR Filing</button>
+                </div>
+            </div>
+
+            <!-- Success / result -->
+            <div id="filingResult" class="card" style="display:none">
+                <div style="text-align:center;padding:32px">
+                    <div style="font-size:3rem;margin-bottom:12px">✅</div>
+                    <h3 id="filingResultTitle">ITR Filing Created!</h3>
+                    <p id="filingResultMsg" style="color:#6b7280;margin:12px 0"></p>
+                    <div style="display:flex;gap:12px;justify-content:center;margin-top:20px">
+                        <a href="itr-summary.html" class="btn btn-primary">View ITR Summary</a>
+                        <button class="btn btn-secondary" id="startOverBtn">Start Over</button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/chatbot.js"></script>
+    <script src="js/merge-statements.js"></script>
+</body>
+</html>

@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - Auto ITR</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/chatbot.css">
+    <style>
+        .profile-card {
+            max-width: 920px;
+            margin: 0 auto;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+            border: 1px solid #dbe3ee;
+        }
+        #profileContent .card-body {
+            padding: 28px;
+        }
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 24px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
+            background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .profile-avatar {
+            width: 88px;
+            height: 88px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1d4f82 0%, #123b67 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+            font-weight: 600;
+            box-shadow: 0 8px 18px rgba(18, 59, 103, 0.28);
+        }
+        .profile-info h2 {
+            margin-bottom: 4px;
+            letter-spacing: -0.02em;
+        }
+        .profile-info .email {
+            color: var(--text-secondary);
+        }
+        .profile-info .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            margin-top: 8px;
+            border: 1px solid transparent;
+        }
+        .badge-user { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
+        .badge-admin { background: #fff7ed; color: #9a3412; border-color: #fdba74; }
+        .badge-auditor { background: #ecfdf5; color: #065f46; border-color: #86efac; }
+        
+        .form-section {
+            margin-bottom: 24px;
+            background: #ffffff;
+            border: 1px solid #dbe3ee;
+            border-radius: 12px;
+            padding: 18px;
+        }
+        .form-section-title {
+            font-size: 1.02rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+            letter-spacing: 0.01em;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .form-control {
+            width: 100%;
+            padding: 0.72rem 0.9rem;
+            font-size: 0.95rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            background: #fff;
+            color: var(--text-primary);
+            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+        }
+        .form-control:hover {
+            border-color: #94a3b8;
+            background: #fbfdff;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+        @media (max-width: 500px) {
+            .form-row { grid-template-columns: 1fr; }
+        }
+        .account-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            background: #f8fbff;
+            padding: 16px;
+            border-radius: 10px;
+            margin-top: 16px;
+            border: 1px solid #dbe7f5;
+        }
+        .account-info-item {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #fff;
+        }
+        .account-info-label { color: var(--text-secondary); font-size: 0.875rem; }
+        .account-info-value { font-weight: 500; }
+        .status-active { color: var(--accent-success); }
+        .status-inactive { color: var(--accent-error); }
+        
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            justify-content: flex-end;
+        }
+        .spinner {
+            width: 24px; height: 24px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+            margin: 40px auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .success-message {
+            background: #ecfdf5;
+            color: #065f46;
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid #86efac;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .error-message {
+            background: #fef2f2;
+            color: #991b1b;
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid #fca5a5;
+            margin-bottom: 16px;
+            display: none;
+        }
+        @media (max-width: 860px) {
+            .account-info { grid-template-columns: 1fr; }
+        }
+        /* CA-specific styling */
+        .ca-navbar {
+            background: linear-gradient(135deg, #0A2540 0%, #1e3a5f 100%);
+        }
+        .ca-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.15);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: #93c5fd;
+            margin-left: 12px;
+        }
+        .ca-badge::before {
+            content: "✓";
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            background: #10B981;
+            color: white;
+            border-radius: 50%;
+            font-size: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <nav class="navbar" id="mainNavbar">
+        <div class="navbar-brand">
+            <h1 class="app-logo">Auto ITR</h1>
+            <span class="ca-badge" id="caBadge" style="display:none">Chartered Accountant</span>
+        </div>
+        <div class="navbar-user">
+            <span class="user-name" id="userName">Loading...</span>
+            <button class="btn btn-secondary btn-sm" id="logoutBtn">Logout</button>
+        </div>
+    </nav>
+
+    <div class="app-layout">
+        <!-- Regular User Sidebar -->
+        <aside class="sidebar" id="userSidebar">
+            <ul class="sidebar-menu">
+                <li class="sidebar-item">
+                    <a href="dashboard.html" class="sidebar-link">
+                        <span class="icon">📊</span>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="upload.html" class="sidebar-link">
+                        <span class="icon">📤</span>
+                        <span>Upload Statement</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="merge-statements.html" class="sidebar-link">
+                        <span class="icon">🔗</span>
+                        <span>Merge & Calculate</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="transactions.html" class="sidebar-link">
+                        <span class="icon">💳</span>
+                        <span>Transactions</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="itr-summary.html" class="sidebar-link">
+                        <span class="icon">📋</span>
+                        <span>ITR Summary</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="analytics.html" class="sidebar-link">
+                        <span class="icon">📈</span>
+                        <span>Analytics</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="balance-sheet.html" class="sidebar-link">
+                        <span class="icon">📒</span>
+                        <span>Balance Sheet</span>
+                    </a>
+                </li>
+                <li class="sidebar-item active">
+                    <a href="profile.html" class="sidebar-link">
+                        <span class="icon">👤</span>
+                        <span>Profile</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- CA Sidebar (hidden by default) -->
+        <aside class="sidebar ca-sidebar" id="caSidebar" style="display:none">
+            <ul class="sidebar-menu">
+                <li class="sidebar-section-title" style="padding:12px 16px 8px;font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;">Review</li>
+                <li class="sidebar-item">
+                    <a href="ca-review.html" class="sidebar-link">
+                        <span class="icon">📋</span>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="sidebar-section-title" style="padding:12px 16px 8px;font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;">Account</li>
+                <li class="sidebar-item active">
+                    <a href="profile.html" class="sidebar-link">
+                        <span class="icon">👤</span>
+                        <span>My Profile</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="page-header">
+                <h2 class="page-title">My Profile</h2>
+                <p class="page-subtitle">View and update your account information</p>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState">
+                <div class="spinner"></div>
+            </div>
+
+            <!-- Profile Content -->
+            <div id="profileContent" style="display: none;">
+                <div class="card profile-card">
+                    <div class="card-body">
+                        <!-- Profile Header -->
+                        <div class="profile-header">
+                            <div class="profile-avatar" id="profileAvatar">U</div>
+                            <div class="profile-info">
+                                <h2 id="profileName">-</h2>
+                                <p class="email" id="profileEmail">-</p>
+                                <span class="badge badge-user" id="profileRole">User</span>
+                            </div>
+                        </div>
+
+                        <!-- Messages -->
+                        <div class="success-message" id="successMessage">Profile updated successfully!</div>
+                        <div class="error-message" id="errorMessage">Error updating profile.</div>
+
+                        <!-- Edit Form -->
+                        <form id="profileForm">
+                            <div class="form-section">
+                                <h4 class="form-section-title">Personal Information</h4>
+                                <div class="form-group">
+                                    <label class="form-label">Full Name</label>
+                                    <input type="text" class="form-control" id="fullName" placeholder="Enter your full name" required minlength="2" maxlength="100">
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Phone Number</label>
+                                        <input type="tel" class="form-control" id="phoneNumber" placeholder="10-digit mobile number" pattern="[6-9][0-9]{9}">
+                                        <small class="text-muted">Indian mobile number starting with 6-9</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">PAN Number</label>
+                                        <input type="text" class="form-control" id="panNumber" placeholder="ABCDE1234F" pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}" style="text-transform: uppercase;">
+                                        <small class="text-muted">Format: ABCDE1234F</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h4 class="form-section-title">Account Information</h4>
+                                <div class="account-info">
+                                    <div class="account-info-item">
+                                        <span class="account-info-label">Email Address</span>
+                                        <span class="account-info-value" id="accountEmail">-</span>
+                                    </div>
+                                    <div class="account-info-item">
+                                        <span class="account-info-label">Account Status</span>
+                                        <span class="account-info-value" id="accountStatus">-</span>
+                                    </div>
+                                    <div class="account-info-item">
+                                        <span class="account-info-label">Email Verified</span>
+                                        <span class="account-info-value" id="accountVerified">-</span>
+                                    </div>
+                                    <div class="account-info-item">
+                                        <span class="account-info-label">Member Since</span>
+                                        <span class="account-info-value" id="accountCreated">-</span>
+                                    </div>
+                                    <div class="account-info-item">
+                                        <span class="account-info-label">Last Login</span>
+                                        <span class="account-info-value" id="accountLastLogin">-</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="btn-group">
+                                <button type="submit" class="btn btn-primary" id="saveBtn">Save Changes</button>
+                                <button type="button" class="btn btn-secondary" id="resetBtn">Reset</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/chatbot.js"></script>
+    <script>
+        let currentUser = null;
+
+        // Check authentication
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                currentUser = await API.users.getProfile();
+                displayUserInfo();
+                loadProfile();
+            } catch (e) {
+                console.error('Auth error:', e);
+                window.location.href = 'login.html';
+            }
+        });
+
+        function displayUserInfo() {
+            document.getElementById('userName').textContent = currentUser.full_name || currentUser.email;
+            
+            // Show CA-specific UI for auditors/admins
+            const role = String(currentUser.role || '').toLowerCase();
+            if (role === 'auditor' || role === 'admin') {
+                // Show CA sidebar, hide user sidebar
+                document.getElementById('userSidebar').style.display = 'none';
+                document.getElementById('caSidebar').style.display = '';
+                // Add CA navbar styling
+                document.getElementById('mainNavbar').classList.add('ca-navbar');
+                document.getElementById('caBadge').style.display = '';
+            }
+        }
+
+        function loadProfile() {
+            // Hide loading, show content
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('profileContent').style.display = '';
+
+            // Profile header
+            const initials = (currentUser.full_name || currentUser.email)
+                .split(' ')
+                .map(n => n[0])
+                .join('')
+                .toUpperCase()
+                .substring(0, 2);
+            document.getElementById('profileAvatar').textContent = initials;
+            document.getElementById('profileName').textContent = currentUser.full_name || '-';
+            document.getElementById('profileEmail').textContent = currentUser.email;
+
+            // Role badge
+            const roleBadge = document.getElementById('profileRole');
+            roleBadge.textContent = currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1);
+            roleBadge.className = 'badge badge-' + currentUser.role;
+
+            // Form fields
+            document.getElementById('fullName').value = currentUser.full_name || '';
+            document.getElementById('phoneNumber').value = currentUser.phone_number || '';
+            document.getElementById('panNumber').value = currentUser.pan_number || '';
+
+            // Account info
+            document.getElementById('accountEmail').textContent = currentUser.email;
+            document.getElementById('accountStatus').innerHTML = currentUser.is_active 
+                ? '<span class="status-active">Active</span>' 
+                : '<span class="status-inactive">Inactive</span>';
+            document.getElementById('accountVerified').innerHTML = currentUser.is_verified 
+                ? '<span class="status-active">Yes</span>' 
+                : '<span class="status-inactive">No</span>';
+            document.getElementById('accountCreated').textContent = formatDate(currentUser.created_at);
+            document.getElementById('accountLastLogin').textContent = currentUser.last_login 
+                ? formatDate(currentUser.last_login) 
+                : 'Never';
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('en-IN', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Form submission
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const saveBtn = document.getElementById('saveBtn');
+            const successMsg = document.getElementById('successMessage');
+            const errorMsg = document.getElementById('errorMessage');
+            
+            // Hide messages
+            successMsg.style.display = 'none';
+            errorMsg.style.display = 'none';
+            
+            // Get form data
+            const data = {
+                full_name: document.getElementById('fullName').value.trim(),
+                phone_number: document.getElementById('phoneNumber').value.trim() || null,
+                pan_number: document.getElementById('panNumber').value.trim().toUpperCase() || null
+            };
+
+            // Validate
+            if (data.full_name.length < 2) {
+                errorMsg.textContent = 'Full name must be at least 2 characters';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            if (data.phone_number && !/^[6-9][0-9]{9}$/.test(data.phone_number)) {
+                errorMsg.textContent = 'Please enter a valid 10-digit mobile number starting with 6-9';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            if (data.pan_number && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(data.pan_number)) {
+                errorMsg.textContent = 'Please enter a valid PAN number (Format: ABCDE1234F)';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            try {
+                saveBtn.disabled = true;
+                saveBtn.textContent = 'Saving...';
+
+                currentUser = await API.users.updateProfile(data);
+                
+                // Update localStorage
+                localStorage.setItem('userData', JSON.stringify(currentUser));
+                
+                // Refresh display
+                displayUserInfo();
+                loadProfile();
+
+                successMsg.style.display = 'block';
+                setTimeout(() => { successMsg.style.display = 'none'; }, 3000);
+            } catch (err) {
+                errorMsg.textContent = err.message || 'Error updating profile';
+                errorMsg.style.display = 'block';
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save Changes';
+            }
+        });
+
+        // Reset button
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            document.getElementById('successMessage').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+            loadProfile();
+        });
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userData');
+            window.location.href = 'login.html';
+        });
+    </script>
+</body>
+</html>

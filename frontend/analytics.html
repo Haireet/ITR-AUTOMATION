@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - Auto ITR</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/chatbot.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        .stat-card .icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+        }
+        .stat-card .value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 4px;
+        }
+        .stat-card .label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .stat-card.income { border-left: 4px solid #10B981; }
+        .stat-card.income .value { color: #047857; }
+        .stat-card.expense { border-left: 4px solid #EF4444; }
+        .stat-card.expense .value { color: #DC2626; }
+        .stat-card.deduction { border-left: 4px solid #3B82F6; }
+        .stat-card.deduction .value { color: #1D4ED8; }
+        .stat-card.tax { border-left: 4px solid #F59E0B; }
+        .stat-card.tax .value { color: #B45309; }
+
+        .chart-container {
+            position: relative;
+            height: 350px;
+            width: 100%;
+        }
+        .chart-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        @media (max-width: 900px) {
+            .chart-row { grid-template-columns: 1fr; }
+        }
+
+        .suggestion-card {
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 16px;
+            background: var(--surface-color);
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+        .suggestion-card .priority-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .priority-high { background: #FEE2E2; color: #991B1B; }
+        .priority-medium { background: #FEF3C7; color: #92400E; }
+        .priority-low { background: #E0E7FF; color: #3730A3; }
+        .suggestion-card .section-badge {
+            background: var(--primary-color);
+            color: white;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.875rem;
+            min-width: 80px;
+            text-align: center;
+        }
+        .suggestion-card .content { flex: 1; }
+        .suggestion-card .title {
+            font-weight: 600;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .suggestion-card .description {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        .suggestion-card .progress-bar {
+            height: 8px;
+            background: var(--bg-color);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+        .suggestion-card .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10B981 0%, #059669 100%);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .suggestion-card .stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        .suggestion-card .savings {
+            font-weight: 600;
+            color: #047857;
+            font-size: 0.875rem;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .comparison-table th {
+            background: var(--bg-color);
+            padding: 14px 16px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .comparison-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .comparison-table tr:hover { background: var(--bg-color); }
+        .comparison-table .amount { text-align: right; font-family: monospace; font-size: 0.95rem; }
+        .comparison-table .positive { color: #047857; }
+        .comparison-table .negative { color: #DC2626; }
+
+        .filter-bar {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .filter-bar label {
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        .filter-bar select {
+            padding: 8px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 24px;
+            color: var(--text-secondary);
+        }
+        .empty-state .icon { font-size: 4rem; margin-bottom: 16px; opacity: 0.5; }
+        .empty-state h3 { color: var(--text-primary); margin-bottom: 8px; }
+
+        .tab-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0;
+        }
+        .tab-btn {
+            padding: 10px 20px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-secondary);
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s;
+        }
+        .tab-btn:hover { color: var(--primary-color); }
+        .tab-btn.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            padding: 40px;
+        }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 4px solid var(--border-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Tax Regime Optimizer Styles */
+        .recommendation-banner {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px;
+            border-radius: var(--radius-lg);
+            margin-bottom: 24px;
+        }
+        .recommendation-banner.new-regime {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            border: 1px solid #3b82f6;
+        }
+        .recommendation-banner.old-regime {
+            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+            border: 1px solid #22c55e;
+        }
+        .recommendation-icon { font-size: 2rem; }
+        .recommendation-text strong {
+            display: block;
+            font-size: 1.125rem;
+            color: var(--text-primary);
+        }
+        .recommendation-text span {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .regime-comparison {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 16px;
+            align-items: stretch;
+            margin-bottom: 24px;
+        }
+        @media (max-width: 768px) {
+            .regime-comparison {
+                grid-template-columns: 1fr;
+            }
+            .vs-divider { display: none; }
+        }
+
+        .regime-card {
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            background: var(--surface-color);
+        }
+        .regime-card.recommended {
+            border-color: #22c55e;
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+        }
+        .regime-card h4 {
+            margin-bottom: 16px;
+            font-size: 1rem;
+            color: var(--text-primary);
+        }
+        .regime-details { display: flex; flex-direction: column; gap: 12px; }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+        }
+        .detail-row.highlight {
+            padding-top: 12px;
+            border-top: 1px solid var(--border-color);
+            font-weight: 600;
+        }
+        .detail-row .positive { color: #047857; }
+        .detail-row .negative { color: #DC2626; }
+
+        .vs-divider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        .break-even-info {
+            background: #fef3c7;
+            border: 1px solid #fbbf24;
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            font-size: 0.875rem;
+        }
+
+        .optimizer-tips {
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .optimizer-tips h5 {
+            margin-bottom: 12px;
+            color: #166534;
+        }
+        .optimizer-tips ul {
+            margin: 0;
+            padding-left: 20px;
+            color: var(--text-secondary);
+        }
+        .optimizer-tips li { margin-bottom: 6px; }
+
+        .optimizer-meta {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 16px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <h1 class="app-logo">Auto ITR</h1>
+        </div>
+        <div class="navbar-user">
+            <span class="user-name" id="userName">Loading...</span>
+            <button class="btn btn-secondary btn-sm" id="logoutBtn">Logout</button>
+        </div>
+    </nav>
+
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li class="sidebar-item">
+                    <a href="dashboard.html" class="sidebar-link">
+                        <span class="icon">📊</span>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="upload.html" class="sidebar-link">
+                        <span class="icon">📤</span>
+                        <span>Upload Statement</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="merge-statements.html" class="sidebar-link">
+                        <span class="icon">🔗</span>
+                        <span>Merge & Calculate</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="transactions.html" class="sidebar-link">
+                        <span class="icon">💳</span>
+                        <span>Transactions</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="itr-summary.html" class="sidebar-link">
+                        <span class="icon">📋</span>
+                        <span>ITR Summary</span>
+                    </a>
+                </li>
+                <li class="sidebar-item active">
+                    <a href="analytics.html" class="sidebar-link">
+                        <span class="icon">📈</span>
+                        <span>Analytics</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="balance-sheet.html" class="sidebar-link">
+                        <span class="icon">📒</span>
+                        <span>Balance Sheet</span>
+                    </a>
+                </li>
+                <li class="sidebar-item" id="caReviewLink" style="display: none;">
+                    <a href="ca-review.html" class="sidebar-link">
+                        <span class="icon">✓</span>
+                        <span>CA Review</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="profile.html" class="sidebar-link">
+                        <span class="icon">👤</span>
+                        <span>Profile</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="page-header">
+                <h2 class="page-title">Analytics & Insights</h2>
+                <p class="page-subtitle">Visualize your income, expenses, and tax savings opportunities</p>
+            </div>
+
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+                <label>Financial Year:</label>
+                <select id="fySelect">
+                    <option value="">All Years</option>
+                    <option value="2024-25">2024-25</option>
+                    <option value="2023-24">2023-24</option>
+                    <option value="2022-23">2022-23</option>
+                </select>
+                <button class="btn btn-primary btn-sm" id="refreshBtn">🔄 Refresh</button>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="loading-spinner">
+                <div class="spinner"></div>
+            </div>
+
+            <!-- Analytics Content -->
+            <div id="analyticsContent" style="display: none;">
+                
+                <!-- Summary Cards -->
+                <div class="analytics-grid" id="summaryCards">
+                    <div class="stat-card income">
+                        <div class="icon">💰</div>
+                        <div class="value" id="totalIncome">₹0</div>
+                        <div class="label">Total Income</div>
+                    </div>
+                    <div class="stat-card expense">
+                        <div class="icon">💸</div>
+                        <div class="value" id="totalExpenses">₹0</div>
+                        <div class="label">Total Expenses</div>
+                    </div>
+                    <div class="stat-card deduction">
+                        <div class="icon">🏷️</div>
+                        <div class="value" id="totalDeductions">₹0</div>
+                        <div class="label">Deductions Claimed</div>
+                    </div>
+                    <div class="stat-card tax">
+                        <div class="icon">📋</div>
+                        <div class="value" id="estimatedTax">₹0</div>
+                        <div class="label">Estimated Tax</div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="chart-row">
+                    <!-- Income Trends Chart -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">📈 Income & Expense Trends</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="trendsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category Breakdown -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">📊 Category Breakdown</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="tab-buttons">
+                                <button class="tab-btn active" data-type="income">Income</button>
+                                <button class="tab-btn" data-type="expense">Expenses</button>
+                                <button class="tab-btn" data-type="deduction">Deductions</button>
+                            </div>
+                            <div class="chart-container" style="height: 280px;">
+                                <canvas id="breakdownChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tax Savings Suggestions -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">💡 Tax Savings Suggestions</h3>
+                    </div>
+                    <div class="card-body" id="suggestionsContainer">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Year-over-Year Comparison -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">📅 Year-over-Year Comparison</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="comparisonContainer">
+                            <!-- Table or chart -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tax Regime Optimizer -->
+                <div class="card">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 class="card-title">🤖 AI Tax Regime Optimizer</h3>
+                        <button class="btn btn-primary btn-sm" id="runOptimizerBtn">Analyze My Data</button>
+                    </div>
+                    <div class="card-body" id="optimizerContainer">
+                        <div class="optimizer-placeholder">
+                            <p style="color: var(--text-secondary); text-align: center; padding: 20px;">
+                                Click "Analyze My Data" to compare Old vs New tax regimes based on your transactions.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" style="display: none;">
+                <div class="empty-state">
+                    <div class="icon">📊</div>
+                    <h3>No Data Available</h3>
+                    <p>Upload and process bank statements to see your financial analytics.</p>
+                    <a href="upload.html" class="btn btn-primary" style="margin-top: 16px;">Upload Statement</a>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/chatbot.js"></script>
+    <script>
+    'use strict';
+
+    // Charts
+    let trendsChart = null;
+    let breakdownChart = null;
+
+    // State
+    let currentFY = null;
+    let breakdownType = 'income';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        if (!Auth.requireRegularUser()) return;
+        
+        // Setup event listeners
+        document.getElementById('fySelect').addEventListener('change', (e) => {
+            currentFY = e.target.value || null;
+            loadAllData();
+        });
+        
+        document.getElementById('refreshBtn').addEventListener('click', loadAllData);
+        
+        // Tab buttons for breakdown chart
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                breakdownType = btn.dataset.type;
+                loadBreakdownChart();
+            });
+        });
+        
+        // Load data
+        await loadAllData();
+    });
+
+    async function loadAllData() {
+        showLoading();
+        try {
+            await Promise.all([
+                loadSummary(),
+                loadTrendsChart(),
+                loadBreakdownChart(),
+                loadTaxSavings(),
+                loadYearComparison()
+            ]);
+            showContent();
+        } catch (e) {
+            console.error('Error loading analytics:', e);
+            showEmpty();
+        }
+    }
+
+    function showLoading() {
+        document.getElementById('loadingState').style.display = 'flex';
+        document.getElementById('analyticsContent').style.display = 'none';
+        document.getElementById('emptyState').style.display = 'none';
+    }
+
+    function showContent() {
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('analyticsContent').style.display = 'block';
+        document.getElementById('emptyState').style.display = 'none';
+    }
+
+    function showEmpty() {
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('analyticsContent').style.display = 'none';
+        document.getElementById('emptyState').style.display = 'block';
+    }
+
+    function formatCurrency(amount) {
+        return '₹' + Number(amount || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+    }
+
+    // ============== Summary Cards ==============
+    async function loadSummary() {
+        try {
+            const data = await API.analytics.getSummary(currentFY);
+            document.getElementById('totalIncome').textContent = formatCurrency(data.total_income);
+            document.getElementById('totalExpenses').textContent = formatCurrency(data.total_expenses);
+            document.getElementById('totalDeductions').textContent = formatCurrency(data.total_deductions);
+            document.getElementById('estimatedTax').textContent = formatCurrency(data.estimated_tax);
+            
+            if (data.transactions_count === 0) {
+                throw new Error('No data');
+            }
+        } catch (e) {
+            throw e;
+        }
+    }
+
+    // ============== Income Trends Chart ==============
+    async function loadTrendsChart() {
+        try {
+            const data = await API.analytics.getIncomeTrends(currentFY);
+            
+            const ctx = document.getElementById('trendsChart').getContext('2d');
+            
+            if (trendsChart) {
+                trendsChart.destroy();
+            }
+            
+            trendsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.month),
+                    datasets: [
+                        {
+                            label: 'Income',
+                            data: data.map(d => d.income),
+                            borderColor: '#10B981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Expenses',
+                            data: data.map(d => d.expense),
+                            borderColor: '#EF4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `${ctx.dataset.label}: ${formatCurrency(ctx.raw)}`
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: (value) => formatCurrency(value)
+                            }
+                        }
+                    }
+                }
+            });
+        } catch (e) {
+            console.error('Error loading trends:', e);
+        }
+    }
+
+    // ============== Breakdown Pie Chart ==============
+    async function loadBreakdownChart() {
+        try {
+            const data = await API.analytics.getExpenseBreakdown(currentFY, breakdownType);
+            
+            const ctx = document.getElementById('breakdownChart').getContext('2d');
+            
+            if (breakdownChart) {
+                breakdownChart.destroy();
+            }
+            
+            const colors = [
+                '#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6',
+                '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1'
+            ];
+            
+            if (data.length === 0) {
+                breakdownChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['No Data'],
+                        datasets: [{
+                            data: [1],
+                            backgroundColor: ['#E5E7EB']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+                return;
+            }
+            
+            breakdownChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.map(d => d.label),
+                    datasets: [{
+                        data: data.map(d => d.amount),
+                        backgroundColor: colors.slice(0, data.length),
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 10,
+                                font: { size: 11 }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => {
+                                    const item = data[ctx.dataIndex];
+                                    return `${item.label}: ${formatCurrency(item.amount)} (${item.percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        } catch (e) {
+            console.error('Error loading breakdown:', e);
+        }
+    }
+
+    // ============== Tax Savings Suggestions ==============
+    async function loadTaxSavings() {
+        try {
+            const suggestions = await API.analytics.getTaxSavings(currentFY);
+            const container = document.getElementById('suggestionsContainer');
+            
+            if (suggestions.length === 0) {
+                container.innerHTML = '<p class="text-muted">No suggestions available. Upload more transaction data for personalized recommendations.</p>';
+                return;
+            }
+            
+            container.innerHTML = suggestions.map(s => {
+                const percentage = s.max_limit > 0 ? Math.min(100, (s.current_amount / s.max_limit) * 100) : 0;
+                return `
+                    <div class="suggestion-card">
+                        <div class="section-badge">${s.section}</div>
+                        <div class="content">
+                            <div class="title">
+                                ${s.title}
+                                <span class="priority-badge priority-${s.priority}">${s.priority}</span>
+                            </div>
+                            <p class="description">${s.description}</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${percentage}%"></div>
+                            </div>
+                            <div class="stats">
+                                <span>Used: ${formatCurrency(s.current_amount)} / ${formatCurrency(s.max_limit)}</span>
+                                ${s.potential_savings > 0 ? `<span class="savings">Potential Savings: ${formatCurrency(s.potential_savings)}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } catch (e) {
+            console.error('Error loading tax savings:', e);
+        }
+    }
+
+    // ============== Year Comparison ==============
+    async function loadYearComparison() {
+        try {
+            const data = await API.analytics.getYearComparison();
+            const container = document.getElementById('comparisonContainer');
+            
+            if (data.length === 0) {
+                container.innerHTML = '<p class="text-muted">No year-over-year data available yet. Process statements from multiple financial years to see comparisons.</p>';
+                return;
+            }
+            
+            // Create comparison table
+            let html = `
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Financial Year</th>
+                            <th class="amount">Gross Income</th>
+                            <th class="amount">Deductions</th>
+                            <th class="amount">Taxable Income</th>
+                            <th class="amount">Tax Liability</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            data.forEach((row, idx) => {
+                // Calculate YoY change for tax
+                let taxChange = '';
+                if (idx > 0) {
+                    const prevTax = data[idx - 1].tax_liability;
+                    const change = row.tax_liability - prevTax;
+                    const pct = prevTax > 0 ? ((change / prevTax) * 100).toFixed(1) : 0;
+                    if (change > 0) {
+                        taxChange = `<br><small class="negative">↑ ${pct}%</small>`;
+                    } else if (change < 0) {
+                        taxChange = `<br><small class="positive">↓ ${Math.abs(pct)}%</small>`;
+                    }
+                }
+                
+                html += `
+                    <tr>
+                        <td><strong>FY ${row.financial_year}</strong></td>
+                        <td class="amount positive">${formatCurrency(row.gross_income)}</td>
+                        <td class="amount">${formatCurrency(row.total_deductions)}</td>
+                        <td class="amount">${formatCurrency(row.taxable_income)}</td>
+                        <td class="amount negative">${formatCurrency(row.tax_liability)}${taxChange}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            
+            // Add comparison chart if multiple years
+            if (data.length > 1) {
+                html += '<div class="chart-container" style="height: 250px; margin-top: 24px;"><canvas id="comparisonChart"></canvas></div>';
+            }
+            
+            container.innerHTML = html;
+            
+            // Render comparison chart
+            if (data.length > 1) {
+                const ctx = document.getElementById('comparisonChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.map(d => 'FY ' + d.financial_year),
+                        datasets: [
+                            {
+                                label: 'Gross Income',
+                                data: data.map(d => d.gross_income),
+                                backgroundColor: 'rgba(16, 185, 129, 0.7)'
+                            },
+                            {
+                                label: 'Tax Liability',
+                                data: data.map(d => d.tax_liability),
+                                backgroundColor: 'rgba(239, 68, 68, 0.7)'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top' }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: (value) => formatCurrency(value)
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        } catch (e) {
+            console.error('Error loading comparison:', e);
+        }
+    }
+
+    // ============== Tax Regime Optimizer ==============
+    document.getElementById('runOptimizerBtn').addEventListener('click', runTaxOptimizer);
+
+    async function runTaxOptimizer() {
+        const btn = document.getElementById('runOptimizerBtn');
+        const container = document.getElementById('optimizerContainer');
+        
+        btn.disabled = true;
+        btn.textContent = 'Analyzing...';
+        
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px;">
+                <div class="spinner"></div>
+                <p style="margin-top: 12px; color: var(--text-secondary);">Analyzing your data and comparing tax regimes...</p>
+            </div>
+        `;
+
+        try {
+            const result = await API.ai.autoOptimizeTax(currentFY);
+            renderOptimizerResult(result);
+        } catch (error) {
+            console.error('Optimizer error:', error);
+            container.innerHTML = `
+                <div class="alert alert-warning">
+                    <strong>Unable to analyze:</strong> ${error.message || 'Please ensure you have processed statements with income data.'}
+                </div>
+            `;
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Analyze My Data';
+        }
+    }
+
+    function renderOptimizerResult(result) {
+        const container = document.getElementById('optimizerContainer');
+        const recommendedRegime = result.recommendation?.regime || result.recommendation || 'new';
+        const isNewBetter = recommendedRegime === 'new';
+        const oldTax = result.old_regime?.tax_payable ?? result.old_regime?.total_tax ?? 0;
+        const newTax = result.new_regime?.tax_payable ?? result.new_regime?.total_tax ?? 0;
+        const oldGross = result.old_regime?.gross_income ?? result.gross_income ?? 0;
+        const newGross = result.new_regime?.gross_income ?? result.gross_income ?? 0;
+        const oldDeductions = result.old_regime?.deductions ?? result.old_regime?.total_deductions ?? 0;
+        const newDeductions = result.new_regime?.deductions ?? result.new_regime?.total_deductions ?? 50000;
+        const savings = result.recommendation?.savings ?? Math.abs(oldTax - newTax);
+        const recommendationReason = result.recommendation?.reason || '';
+
+        container.innerHTML = `
+            <div class="optimizer-result">
+                <!-- Recommendation Banner -->
+                <div class="recommendation-banner ${isNewBetter ? 'new-regime' : 'old-regime'}">
+                    <div class="recommendation-icon">${isNewBetter ? '🆕' : '📜'}</div>
+                    <div class="recommendation-text">
+                        <strong>Recommended: ${isNewBetter ? 'New Tax Regime' : 'Old Tax Regime'}</strong>
+                        <span>You could save ₹${formatNumber(savings)} with this regime</span>
+                        ${recommendationReason ? `<small style="display:block;margin-top:4px;color:var(--text-secondary)">${recommendationReason}</small>` : ''}
+                    </div>
+                </div>
+
+                <!-- Regime Comparison -->
+                <div class="regime-comparison">
+                    <div class="regime-card ${!isNewBetter ? 'recommended' : ''}">
+                        <h4>📜 Old Regime</h4>
+                        <div class="regime-details">
+                            <div class="detail-row">
+                                <span>Gross Income</span>
+                                <span>₹${formatNumber(oldGross)}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span>Total Deductions</span>
+                                <span class="positive">-₹${formatNumber(oldDeductions)}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span>Taxable Income</span>
+                                <span>₹${formatNumber(result.old_regime.taxable_income)}</span>
+                            </div>
+                            <div class="detail-row highlight">
+                                <span>Tax Payable</span>
+                                <span class="negative">₹${formatNumber(oldTax)}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="vs-divider">VS</div>
+
+                    <div class="regime-card ${isNewBetter ? 'recommended' : ''}">
+                        <h4>🆕 New Regime</h4>
+                        <div class="regime-details">
+                            <div class="detail-row">
+                                <span>Gross Income</span>
+                                <span>₹${formatNumber(newGross)}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span>Standard Deduction</span>
+                                <span class="positive">-₹${formatNumber(newDeductions)}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span>Taxable Income</span>
+                                <span>₹${formatNumber(result.new_regime.taxable_income)}</span>
+                            </div>
+                            <div class="detail-row highlight">
+                                <span>Tax Payable</span>
+                                <span class="negative">₹${formatNumber(newTax)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Break-even Analysis -->
+                ${result.break_even_deduction > 0 ? `
+                <div class="break-even-info">
+                    <strong>💡 Break-even Point:</strong> 
+                    If your deductions exceed ₹${formatNumber(result.break_even_deduction)}, old regime becomes better.
+                </div>
+                ` : ''}
+
+                <!-- Tips -->
+                ${result.tips && result.tips.length > 0 ? `
+                <div class="optimizer-tips">
+                    <h5>💡 Tips for Maximum Savings</h5>
+                    <ul>
+                        ${result.tips.map(tip => `<li>${tip}</li>`).join('')}
+                    </ul>
+                </div>
+                ` : ''}
+
+                <p class="optimizer-meta">
+                    Based on ${result.transactions_analyzed || 0} transactions from FY ${result.financial_year || currentFY}
+                </p>
+            </div>
+        `;
+    }
+
+    function formatNumber(n) {
+        if (n == null || isNaN(n)) return '0';
+        return Number(n).toLocaleString('en-IN');
+    }
+    </script>
+</body>
+</html>

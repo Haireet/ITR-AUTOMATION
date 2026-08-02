@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balance Sheet - Auto ITR</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/chatbot.css">
+    <style>
+        /* Tab navigation */
+        .tabs { display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 2px solid var(--border-color); }
+        .tab-btn {
+            padding: 10px 22px; border: none; background: none; cursor: pointer;
+            font-weight: 500; color: var(--text-secondary); border-bottom: 2px solid transparent;
+            margin-bottom: -2px; transition: all .2s; font-size: var(--font-size-base);
+        }
+        .tab-btn.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
+        .tab-btn:hover:not(.active) { color: var(--text-primary); }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* Summary cards */
+        .bs-summary { display: grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap: 16px; margin-bottom: 24px; }
+        .bs-summary-card { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 20px; text-align: center; }
+        .bs-summary-card .label { font-size: var(--font-size-sm); color: var(--text-secondary); margin-bottom: 4px; }
+        .bs-summary-card .value { font-size: var(--font-size-2xl); font-weight: 700; }
+        .bs-summary-card .value.positive { color: #047857; }
+        .bs-summary-card .value.negative { color: #dc2626; }
+        .bs-summary-card .value.neutral  { color: var(--primary-color); }
+
+        /* Section headers */
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .section-title { font-size: var(--font-size-lg); font-weight: 600; }
+
+        /* Items table */
+        .items-table { width: 100%; border-collapse: collapse; }
+        .items-table th { text-align: left; padding: 10px 12px; background: var(--bg-color); font-weight: 600; border-bottom: 2px solid var(--border-color); }
+        .items-table td { padding: 10px 12px; border-bottom: 1px solid var(--border-color); }
+        .items-table tr:hover { background: var(--bg-color); }
+        .items-table .amount { text-align: right; font-weight: 500; }
+        .items-table .actions { text-align: right; white-space: nowrap; }
+        .items-table .total-row { font-weight: 700; background: rgba(10,37,64,.04); }
+        .items-table .total-row td { border-top: 2px solid var(--border-color); }
+
+        /* Breakdown list */
+        .breakdown-list { list-style: none; padding: 0; }
+        .breakdown-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color); }
+        .breakdown-item:last-child { border-bottom: none; }
+        .breakdown-cat { text-transform: capitalize; color: var(--text-primary); }
+        .breakdown-amt { font-weight: 600; }
+
+        /* FY selector */
+        .fy-selector { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+
+        /* Add item form */
+        .add-item-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: end; margin-top: 12px; }
+        .add-item-row .form-group { margin-bottom: 0; flex: 1; min-width: 120px; }
+        .add-item-row .form-input, .add-item-row .form-select { padding: 6px 8px; font-size: var(--font-size-sm); }
+
+        /* Empty state */
+        .empty-state { text-align: center; padding: 48px 24px; color: var(--text-secondary); }
+        .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+
+        .btn-icon { background: none; border: none; cursor: pointer; font-size: 1.1rem; padding: 4px; }
+        .btn-icon:hover { opacity: .7; }
+
+        /* Create sheet form */
+        .create-form { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
+        .create-form .form-group { margin-bottom: 0; }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <h1 class="app-logo">Auto ITR</h1>
+        </div>
+        <div class="navbar-user">
+            <span class="user-name" id="userName">Loading...</span>
+            <button class="btn btn-secondary btn-sm" id="logoutBtn">Logout</button>
+        </div>
+    </nav>
+
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li class="sidebar-item">
+                    <a href="dashboard.html" class="sidebar-link">
+                        <span class="icon">📊</span><span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="upload.html" class="sidebar-link">
+                        <span class="icon">📤</span><span>Upload Statement</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="merge-statements.html" class="sidebar-link">
+                        <span class="icon">🔗</span><span>Merge & Calculate</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="transactions.html" class="sidebar-link">
+                        <span class="icon">💳</span><span>Transactions</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="itr-summary.html" class="sidebar-link">
+                        <span class="icon">📋</span><span>ITR Summary</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="analytics.html" class="sidebar-link">
+                        <span class="icon">📈</span><span>Analytics</span>
+                    </a>
+                </li>
+                <li class="sidebar-item active">
+                    <a href="balance-sheet.html" class="sidebar-link">
+                        <span class="icon">📒</span><span>Balance Sheet</span>
+                    </a>
+                </li>
+                <li class="sidebar-item" id="caReviewLink" style="display: none;">
+                    <a href="ca-review.html" class="sidebar-link">
+                        <span class="icon">✓</span><span>CA Review</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="profile.html" class="sidebar-link">
+                        <span class="icon">👤</span><span>Profile</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="page-header">
+                <h2 class="page-title">Balance Sheet</h2>
+                <p class="page-subtitle">Manage your assets, liabilities and financial position</p>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="schedule_al">Schedule AL</button>
+                <button class="tab-btn" data-tab="personal">Personal</button>
+                <button class="tab-btn" data-tab="business">Business</button>
+            </div>
+
+            <!-- ===== Schedule AL Tab ===== -->
+            <div class="tab-panel active" id="tab-schedule_al">
+                <div class="fy-selector">
+                    <label class="form-label" style="margin-bottom:0">Financial Year:</label>
+                    <select class="form-select" id="alFY" style="width:auto">
+                        <option value="2025-26">2025-26</option>
+                        <option value="2024-25" selected>2024-25</option>
+                        <option value="2023-24">2023-24</option>
+                    </select>
+                    <button class="btn btn-primary btn-sm" id="alLoadBtn">Load</button>
+                    <button class="btn btn-secondary btn-sm" id="alCreateBtn">+ New Schedule AL</button>
+                </div>
+
+                <div id="alContent">
+                    <div class="empty-state" id="alEmpty">
+                        <div class="icon">📒</div>
+                        <p>No Schedule AL found for this financial year.</p>
+                        <p class="small text-muted">Click "+ New Schedule AL" to create one.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== Personal Tab ===== -->
+            <div class="tab-panel" id="tab-personal">
+                <div class="fy-selector">
+                    <label class="form-label" style="margin-bottom:0">Financial Year:</label>
+                    <select class="form-select" id="personalFY" style="width:auto">
+                        <option value="2025-26">2025-26</option>
+                        <option value="2024-25" selected>2024-25</option>
+                        <option value="2023-24">2023-24</option>
+                    </select>
+                    <button class="btn btn-primary btn-sm" id="personalLoadBtn">Generate Summary</button>
+                </div>
+
+                <div id="personalContent">
+                    <div class="empty-state" id="personalEmpty">
+                        <div class="icon">👤</div>
+                        <p>Select a financial year and click "Generate Summary" to auto-generate your personal balance sheet from transactions.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== Business Tab ===== -->
+            <div class="tab-panel" id="tab-business">
+                <div class="fy-selector">
+                    <label class="form-label" style="margin-bottom:0">Financial Year:</label>
+                    <select class="form-select" id="bizFY" style="width:auto">
+                        <option value="2025-26">2025-26</option>
+                        <option value="2024-25" selected>2024-25</option>
+                        <option value="2023-24">2023-24</option>
+                    </select>
+                    <button class="btn btn-primary btn-sm" id="bizLoadBtn">Load</button>
+                    <button class="btn btn-secondary btn-sm" id="bizCreateBtn">+ New Business BS</button>
+                </div>
+
+                <div id="bizContent">
+                    <div class="empty-state" id="bizEmpty">
+                        <div class="icon">🏢</div>
+                        <p>No Business balance sheet found for this financial year.</p>
+                        <p class="small text-muted">Click "+ New Business BS" to create one.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Item Modal -->
+    <div class="modal" id="addItemModal" style="display:none">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Add Item</h3>
+                <button class="modal-close" id="modalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Type</label>
+                    <select class="form-select" id="itemType">
+                        <option value="asset">Asset</option>
+                        <option value="liability">Liability</option>
+                        <option value="equity">Equity</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <input class="form-input" id="itemCategory" placeholder="e.g. Immovable Property, Bank Deposits">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Subcategory (optional)</label>
+                    <input class="form-input" id="itemSubcategory" placeholder="e.g. Land, Building">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description (optional)</label>
+                    <input class="form-input" id="itemDescription" placeholder="Brief description">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Amount (₹)</label>
+                    <input class="form-input" id="itemAmount" type="number" min="0" step="0.01" placeholder="0.00">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-sm" id="modalCancel">Cancel</button>
+                <button class="btn btn-primary btn-sm" id="modalSave">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/chatbot.js"></script>
+    <script src="js/balance-sheet.js"></script>
+</body>
+</html>

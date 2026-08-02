@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transactions - Auto ITR</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/chatbot.css">
+</head>
+<body>
+    <!-- Top Navigation -->
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <h1 class="app-logo">Auto ITR</h1>
+        </div>
+        <div class="navbar-user">
+            <span class="user-name" id="userName">Loading...</span>
+            <button class="btn btn-secondary btn-sm" id="logoutBtn">Logout</button>
+        </div>
+    </nav>
+
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li class="sidebar-item">
+                    <a href="dashboard.html" class="sidebar-link">
+                        <span class="icon">📊</span>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="upload.html" class="sidebar-link">
+                        <span class="icon">📤</span>
+                        <span>Upload Statement</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="merge-statements.html" class="sidebar-link">
+                        <span class="icon">🔗</span>
+                        <span>Merge & Calculate</span>
+                    </a>
+                </li>
+                <li class="sidebar-item active">
+                    <a href="transactions.html" class="sidebar-link">
+                        <span class="icon">💳</span>
+                        <span>Transactions</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="itr-summary.html" class="sidebar-link">
+                        <span class="icon">📋</span>
+                        <span>ITR Summary</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="analytics.html" class="sidebar-link">
+                        <span class="icon">📈</span>
+                        <span>Analytics</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="balance-sheet.html" class="sidebar-link">
+                        <span class="icon">📒</span>
+                        <span>Balance Sheet</span>
+                    </a>
+                </li>
+                <li class="sidebar-item" id="caReviewLink" style="display: none;">
+                    <a href="ca-review.html" class="sidebar-link">
+                        <span class="icon">✓</span>
+                        <span>CA Review</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="profile.html" class="sidebar-link">
+                        <span class="icon">👤</span>
+                        <span>Profile</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="page-header">
+                <h2 class="page-title">Review Transactions</h2>
+                <p class="page-subtitle">Review and categorize your transactions for accurate tax calculation</p>
+            </div>
+
+            <!-- Statement Selector -->
+            <div class="card">
+                <div class="card-body">
+                    <div id="statementSelectorContainer">
+                        <p class="text-muted">Loading statements…</p>
+                    </div>
+                    <div id="uncategorizedCount" style="margin-top:8px;color:var(--accent-warning);font-weight:500"></div>
+                </div>
+            </div>
+
+            <!-- Filters and Search -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="filters-row">
+                        <div class="filter-group">
+                            <input 
+                                type="text" 
+                                id="searchInput" 
+                                class="form-input" 
+                                placeholder="Search transactions..."
+                            >
+                        </div>
+                        <div class="filter-group">
+                            <select id="categoryFilter" class="form-select">
+                                <option value="">All Categories</option>
+                                <option value="uncategorized">Uncategorized</option>
+                                <option value="salary">Salary</option>
+                                <option value="interest">Interest</option>
+                                <option value="deduction_80c">Deduction 80C</option>
+                                <option value="deduction_80d">Deduction 80D</option>
+                                <option value="expense">Expense</option>
+                                <option value="transfer">Transfer</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <button class="btn btn-secondary" id="filterBtn">Apply Filters</button>
+                        </div>
+                        <div class="filter-group" style="margin-left: auto;">
+                            <button class="btn btn-secondary" id="autoCategorizeBtn" title="AI Auto-categorize uncategorized transactions">
+                                🤖 Auto-Categorize
+                            </button>
+                            <button class="btn btn-secondary" id="detectAnomaliesBtn" title="Detect unusual transactions">
+                                🔍 Detect Anomalies
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Anomaly Alert Banner -->
+            <div id="anomalyAlert" class="alert alert-warning" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>⚠️ Anomalies Detected</strong> - <span id="anomalyCount">0</span> unusual transactions found.
+                    </div>
+                    <button class="btn btn-sm btn-secondary" id="viewAnomaliesBtn">View Details</button>
+                </div>
+            </div>
+
+            <!-- Unsaved Changes Warning -->
+            <div id="unsavedWarning" class="alert alert-warning" style="display: none;">
+                <strong>⚠️ Unsaved Changes</strong> - You have unsaved category changes. Please save or discard them.
+            </div>
+
+            <!-- Transactions Table -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-container">
+                        <table class="data-table" id="transactionsTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th>Debit</th>
+                                    <th>Credit</th>
+                                    <th>Balance</th>
+                                    <th>Category</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionsBody">
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted">
+                                        Loading transactions...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="pagination" id="pagination">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-bar">
+                <button class="btn btn-primary" id="saveChangesBtn" disabled>
+                    Save Changes
+                </button>
+                <button class="btn btn-secondary" id="discardChangesBtn" disabled>
+                    Discard Changes
+                </button>
+                <button class="btn btn-secondary" id="exportTxnPDF">📥 Export PDF</button>
+                <button class="btn btn-secondary" id="exportTxnJSON">📥 Export JSON</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Category Edit Modal -->
+    <div id="categoryModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Transaction Category</h3>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Transaction</label>
+                    <p id="modalTransactionInfo" class="text-muted"></p>
+                </div>
+                <div class="form-group">
+                    <label for="modalCategory" class="form-label">Category</label>
+                    <select id="modalCategory" class="form-select">
+                        <option value="uncategorized">Uncategorized</option>
+                        <option value="salary">Salary</option>
+                        <option value="interest">Interest Income</option>
+                        <option value="dividend">Dividend</option>
+                        <option value="rental_income">Rental Income</option>
+                        <option value="business_income">Business Income</option>
+                        <option value="deduction_80c">Deduction 80C</option>
+                        <option value="deduction_80d">Deduction 80D</option>
+                        <option value="home_loan_interest">Home Loan Interest</option>
+                        <option value="donation">Donation</option>
+                        <option value="expense">Expense</option>
+                        <option value="transfer">Transfer</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="modalNotes" class="form-label">Notes (Optional)</label>
+                    <textarea 
+                        id="modalNotes" 
+                        class="form-input" 
+                        rows="3"
+                        placeholder="Add notes about this transaction..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelModalBtn">Cancel</button>
+                <button class="btn btn-primary" id="saveModalBtn">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/chatbot.js"></script>
+    <script src="js/transactions.js"></script>
+</body>
+</html>
